@@ -123,8 +123,8 @@
       "icon": "text:SD",
       "website": "https://sd25.app",
       "description": {
-        "en": "Seedance 2.5 video on sd25.app via the OpenAI video API. Duration, resolution, audio, and reference media",
-        "zh": "通过 sd25.app 的 OpenAI 视频接口生成 Seedance 2.5。支持时长、分辨率、声音与参考素材"
+        "en": "Seedance 2.5 video on sd25.app via the OpenAI video API. Duration, resolution, aspect ratio (16:9, 9:16, 4:3, 3:4, 1:1, 21:9, adaptive), audio, and reference media",
+        "zh": "通过 sd25.app 的 OpenAI 视频接口生成 Seedance 2.5。支持时长、分辨率、画幅（16:9、9:16、4:3、3:4、1:1、21:9、adaptive）、声音与参考素材"
       },
       "protocols": [
         {
@@ -145,12 +145,20 @@
         "sd2.5-G3-特惠-1",
         "sd2.5-G3-特惠-2"
       ],
-      "latest": "1.1.0",
+      "latest": "1.1.1",
       "versions": [
         {
           "version": "1.1.0",
           "path": "plugins/tasks/sd25_video/1.1.0/plugin.js",
           "sha256": "33420e6b25164c6b2caee815f0f6f84bd3f7efff8cb1b44d4b880e20238e2ff3",
+          "minApiVersion": 1,
+          "kind": "task",
+          "baseUrl": "https://sd25.app"
+        },
+        {
+          "version": "1.1.1",
+          "path": "plugins/tasks/sd25_video/1.1.1/plugin.js",
+          "sha256": "db06b1c9a6f1bb06653eb6771a2a8f1a9786193159ec583ede929b4c978b7784",
           "minApiVersion": 1,
           "kind": "task",
           "baseUrl": "https://sd25.app"
