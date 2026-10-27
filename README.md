@@ -1,6 +1,10 @@
 # 佳速API · NewAPI 任务插件市场源
 
-面向 **其他 NewAPI 实例** 的 GitHub 市场源：安装本仓库中的 `jiasuapi` 任务插件后，可将 [佳速API](https://ai.jiasuapi.com/) 作为图片 / 视频生成上游。
+面向 **其他 NewAPI 实例** 的 GitHub 市场源。本仓库现有两个任务插件：`jiasuapi`（佳速API 图片 / 视频）和 `sd25_video`（sd25.app 上的 Seedance 2.5 视频，见下方「SD2.5 视频」）。
+
+## 佳速API（`jiasuapi`）
+
+安装 `jiasuapi` 后，可将 [佳速API](https://ai.jiasuapi.com/) 作为图片 / 视频生成上游。
 
 - 官方地址：https://ai.jiasuapi.com/
 - 插件 key：`jiasuapi`
@@ -189,6 +193,25 @@ curl -sS -X POST "$YOUR_NEW_API/v1/images/create" \
 - 视频：`GET /v1/videos/tasks/:task_id`
 - 图片：`GET /v1/images/tasks/:task_id`
 
+## SD2.5 视频（`sd25_video`）
+
+- 插件 key：`sd25_video`
+- 当前版本：`1.1.0`
+- 默认 Base URL：`https://sd25.app`（渠道里已填写的 Base URL 优先；插件不内置密钥）
+- 协议：`openai_video`（`POST /v1/videos`、`GET /v1/videos/:task_id`、`GET|HEAD /v1/videos/:task_id/content`）
+- 发给上游的 `model` 恒为 `seedance-2.5`
+
+可 pin 的名字（`meta.models` 与 `protocols.openai_video.models`）：
+
+| 名字 | 用途 |
+| --- | --- |
+| `seedance-2.5` | 上游字面量 |
+| `seedance-2.5-app-秒` | param_routing 按秒渠 |
+| `seedance-2.5-app-条` | param_routing 按条渠 |
+| `sd2.5-G3-特惠-1` / `sd2.5-G3-特惠-2` | facade 对外名。同模式的 `sd2.5-G3-特惠-N` 在提交时也可接受 |
+
+`decodeRequest` 返回的 model 等于主机 pin 的名字。`buildSubmitRequest` 接受 OriginModelName、别名和 UpstreamModelName，请求体里的 model 仍写成 `seedance-2.5`。
+
 ## 仓库结构
 
 ```text
@@ -200,6 +223,8 @@ scripts/last-sync.json
 plugins/tasks/jiasuapi/1.0.0/plugin.js
 plugins/tasks/jiasuapi/1.0.1/plugin.js
 plugins/tasks/jiasuapi/1.0.2/plugin.js
+plugins/tasks/sd25_video/1.1.0/plugin.js
+plugins/tasks/sd25_video/1.1.0/golden.json
 ```
 
 ## 本地校验
@@ -207,6 +232,8 @@ plugins/tasks/jiasuapi/1.0.2/plugin.js
 ```bash
 node --check plugins/tasks/jiasuapi/1.0.2/plugin.js
 sha256sum plugins/tasks/jiasuapi/1.0.2/plugin.js   # 应与 index.json versions[].sha256 一致
+node --check plugins/tasks/sd25_video/1.1.0/plugin.js
+sha256sum plugins/tasks/sd25_video/1.1.0/plugin.js   # 应与 index.json versions[].sha256 一致
 ```
 
 若本机有 NewAPI 源码：
