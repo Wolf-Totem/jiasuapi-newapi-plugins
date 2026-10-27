@@ -2,10 +2,11 @@
 // Upstream is OpenAI-compatible video (POST /v1/videos on the channel base, e.g. https://sd25.app).
 // Connection settings stay on the channel. This file does not embed keys or a fixed upstream list.
 //
-// 1.1.1 accepts only 16:9. Resolutions stay 480p, 720p, and 1080p.
-// An explicit ratio other than 16:9 is rejected. When the client omits the
-// ratio, a pixel size from another aspect is rewritten to the 16:9 size of
-// the same resolution instead of failing with "size must match".
+// 1.1.1 keeps every aspect (16:9, 9:16, 4:3, 3:4, 1:1, 21:9, adaptive).
+// A request that sends size, resolution, and ratio together is normalized:
+// an explicit ratio wins, otherwise the pixel size's aspect is used, and
+// only a missing aspect defaults to 16:9. The output is that pair's pixel
+// size. Known mismatches are not rejected with "size must match".
 //
 // Model identities (1.1.1):
 // - Wire body.model sent upstream is always the literal "seedance-2.5".
@@ -58,26 +59,21 @@ function hostIdentities(ctx) {
 function modelError() {
   return new Error("model must be seedance-2.5 or a declared SD2.5 name");
 }
-const RATIO = "16:9";
 const SIZES = {
-  "854x480": "480p",
-  "1280x720": "720p",
-  "1920x1080": "1080p",
+  "854x480": "480p", "480x854": "480p", "640x480": "480p", "480x640": "480p",
+  "480x480": "480p", "1120x480": "480p", "adaptive-480p": "480p",
+  "1280x720": "720p", "720x1280": "720p", "960x720": "720p", "720x960": "720p",
+  "720x720": "720p", "1680x720": "720p", "adaptive-720p": "720p",
+  "1920x1080": "1080p", "1080x1920": "1080p", "1440x1080": "1080p", "1080x1440": "1080p",
+  "1080x1080": "1080p", "2520x1080": "1080p", "adaptive-1080p": "1080p",
 };
-const SIZE_16_9 = {
-  "480p": "854x480",
-  "720p": "1280x720",
-  "1080p": "1920x1080",
+const SIZES_BY_RESOLUTION = {
+  "480p": { "16:9": "854x480", "9:16": "480x854", "4:3": "640x480", "3:4": "480x640", "1:1": "480x480", "21:9": "1120x480", adaptive: "adaptive-480p" },
+  "720p": { "16:9": "1280x720", "9:16": "720x1280", "4:3": "960x720", "3:4": "720x960", "1:1": "720x720", "21:9": "1680x720", adaptive: "adaptive-720p" },
+  "1080p": { "16:9": "1920x1080", "9:16": "1080x1920", "4:3": "1440x1080", "3:4": "1080x1440", "1:1": "1080x1080", "21:9": "2520x1080", adaptive: "adaptive-1080p" },
 };
-// Pixel sizes this plugin used to accept for other aspects, plus adaptive
-// tokens. They identify a resolution so a request that never asked for a
-// non-16:9 ratio can be rewritten to SIZE_16_9. They are not valid output.
-const OTHER_ASPECT_SIZE = {
-  "480x854": "480p", "640x480": "480p", "480x640": "480p", "480x480": "480p", "1120x480": "480p", "adaptive-480p": "480p",
-  "720x1280": "720p", "960x720": "720p", "720x960": "720p", "720x720": "720p", "1680x720": "720p", "adaptive-720p": "720p",
-  "1080x1920": "1080p", "1440x1080": "1080p", "1080x1440": "1080p", "1080x1080": "1080p", "2520x1080": "1080p", "adaptive-1080p": "1080p",
-};
-const SIZE_ERROR = "size must be a 16:9 pixel size (854x480, 1280x720, or 1920x1080)";
+const SIZE_ERROR = "size must be 480p, 720p, 1080p, adaptive-480p/720p/1080p, or a supported pixel size for 16:9, 9:16, 4:3, 3:4, 1:1, or 21:9";
+const ASPECT_ERROR = "aspect_ratio must be 16:9, 9:16, 4:3, 3:4, 1:1, 21:9 or adaptive";
 
 export const meta = {
   apiVersion: 1,
@@ -87,8 +83,8 @@ export const meta = {
   version: "1.1.1",
   author: { name: "SD2.5" },
   description: {
-    en: "Seedance 2.5 video on sd25.app via the OpenAI video API. 16:9 only, at 480p, 720p, or 1080p. Duration, audio, and reference media",
-    zh: "通过 sd25.app 的 OpenAI 视频接口生成 Seedance 2.5。仅支持 16:9，分辨率 480p、720p 或 1080p。支持时长、声音与参考素材",
+    en: "Seedance 2.5 video on sd25.app via the OpenAI video API. Duration, resolution, aspect ratio (16:9, 9:16, 4:3, 3:4, 1:1, 21:9, adaptive), audio, and reference media",
+    zh: "通过 sd25.app 的 OpenAI 视频接口生成 Seedance 2.5。支持时长、分辨率、画幅（16:9、9:16、4:3、3:4、1:1、21:9、adaptive）、声音与参考素材",
   },
   models: DECLARED_MODELS,
   fetchMode: "per_task",
@@ -99,8 +95,8 @@ export const meta = {
     enable_audio: { type: "boolean", description: { en: "Whether audio is generated", zh: "是否生成音频" } },
   },
   usageExamples: [
-    { label: "720P · 16:9 · 5秒 · 有声", facts: { seconds: 5, resolution: "720p", enable_audio: true } },
-    { label: "720P · 16:9 · 30秒 · 静音", facts: { seconds: 30, resolution: "720p", enable_audio: false } },
+    { label: "720P · 5秒 · 有声", facts: { seconds: 5, resolution: "720p", enable_audio: true } },
+    { label: "720P · 30秒 · 静音", facts: { seconds: 30, resolution: "720p", enable_audio: false } },
   ],
 };
 
@@ -217,17 +213,27 @@ function audioReference(value, label) {
     throw new Error(label + " audio_url must be an HTTP(S) URL without credentials or fragments");
   return { audio_url: url };
 }
-function sizeResolution(value) {
-  if (has(SIZES, value)) return SIZES[value];
-  if (has(OTHER_ASPECT_SIZE, value)) return OTHER_ASPECT_SIZE[value];
+function sizeFacts(value) {
+  const resolutions = Object.keys(SIZES_BY_RESOLUTION);
+  for (let i = 0; i < resolutions.length; i++) {
+    const resolution = resolutions[i];
+    const row = SIZES_BY_RESOLUTION[resolution];
+    const aspects = Object.keys(row);
+    for (let j = 0; j < aspects.length; j++) {
+      if (row[aspects[j]] === value) return { resolution: resolution, aspect: aspects[j] };
+    }
+  }
   return undefined;
 }
 function requestSize(req) {
   // Site clients often send size="720p" / ratio / video_resolution.
-  // The only output size is the 16:9 pixel size for 480p, 720p, or 1080p.
+  // Explicit ratio and resolution win. A pixel size fills whichever of
+  // those is missing, including its aspect, so a portrait size is not
+  // forced through the 16:9 default and then rejected.
   let resolution = pickResolution(req);
-  const aspect = pickAspect(req);
+  let aspect = pickAspect(req);
   let sizeRaw = has(req, "size") ? req.size : undefined;
+  let fromSize;
   if (typeof sizeRaw === "string") {
     sizeRaw = sizeRaw.trim().toLowerCase();
     const asRes = asResolutionToken(sizeRaw);
@@ -235,33 +241,30 @@ function requestSize(req) {
       if (resolution && resolution.trim().toLowerCase() !== asRes) throw new Error("size conflicts with resolution");
       resolution = asRes;
       sizeRaw = undefined;
-    } else if (!sizeResolution(sizeRaw)) {
-      throw new Error(SIZE_ERROR);
+    } else {
+      fromSize = sizeFacts(sizeRaw);
+      if (!fromSize) throw new Error(SIZE_ERROR);
     }
   } else if (sizeRaw !== undefined) {
     throw new Error("size must be a string");
   }
-  if (aspect !== undefined) {
-    if (typeof aspect !== "string") throw new Error("aspect_ratio must be a string");
-    if (aspect.trim().toLowerCase() !== RATIO) throw new Error("aspect_ratio must be 16:9");
-  }
-  if (resolution === undefined && sizeRaw === undefined) {
-    if (aspect !== undefined) throw new Error("resolution is required when aspect_ratio/ratio is supplied");
-    throw new Error(SIZE_ERROR);
-  }
-  if (resolution !== undefined) {
-    if (typeof resolution !== "string") throw new Error("resolution must be a string");
-    resolution = resolution.trim().toLowerCase();
-    if (!has(SIZE_16_9, resolution)) throw new Error("resolution must be 480p, 720p or 1080p");
-  } else {
-    resolution = sizeResolution(sizeRaw);
-  }
-  return SIZE_16_9[resolution];
+  if (aspect === undefined && fromSize) aspect = fromSize.aspect;
+  if (resolution === undefined && fromSize) resolution = fromSize.resolution;
+  if (resolution === undefined && aspect === undefined) throw new Error(SIZE_ERROR);
+  if (resolution === undefined) throw new Error("resolution is required when aspect_ratio/ratio is supplied");
+  if (typeof resolution !== "string") throw new Error("resolution must be a string");
+  resolution = resolution.trim().toLowerCase();
+  if (!has(SIZES_BY_RESOLUTION, resolution)) throw new Error("resolution must be 480p, 720p or 1080p");
+  if (aspect === undefined) aspect = "16:9";
+  if (typeof aspect !== "string") throw new Error("aspect_ratio must be a string");
+  const ratio = aspect.trim().toLowerCase();
+  if (!has(SIZES_BY_RESOLUTION[resolution], ratio)) throw new Error(ASPECT_ERROR);
+  return SIZES_BY_RESOLUTION[resolution][ratio];
 }
 function asResolutionToken(value) {
   if (typeof value !== "string") return undefined;
   const t = value.trim().toLowerCase();
-  return has(SIZE_16_9, t) ? t : undefined;
+  return has(SIZES_BY_RESOLUTION, t) ? t : undefined;
 }
 function pickAspect(req) {
   const names = ["aspect_ratio", "ratio", "aspect"].filter(function (name) { return has(req, name); });

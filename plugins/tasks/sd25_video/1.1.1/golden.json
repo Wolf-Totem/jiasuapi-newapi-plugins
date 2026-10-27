@@ -195,7 +195,7 @@
             "prompt": "夜景",
             "seconds": 6,
             "resolution": "1080p",
-            "aspect": "16:9",
+            "aspect": "1:1",
             "enable_audio": false
           }
         }
@@ -211,7 +211,7 @@
           "model": "seedance-2.5",
           "prompt": "夜景",
           "seconds": 6,
-          "size": "1920x1080",
+          "size": "1080x1080",
           "enable_audio": false
         }
       }
@@ -594,7 +594,7 @@
       }
     },
     {
-      "name": "other-aspect pixels without a ratio are forced to 16:9 of that resolution",
+      "name": "portrait size without a ratio stays 9:16",
       "hook": "buildSubmitRequest",
       "args": [
         {
@@ -623,13 +623,13 @@
           "model": "seedance-2.5",
           "prompt": "a",
           "seconds": 5,
-          "size": "1280x720",
+          "size": "720x1280",
           "enable_audio": true
         }
       }
     },
     {
-      "name": "size alone that is another aspect is forced to 16:9",
+      "name": "square size alone stays 1:1",
       "hook": "buildSubmitRequest",
       "args": [
         {
@@ -657,7 +657,7 @@
           "model": "seedance-2.5",
           "prompt": "a",
           "seconds": 4,
-          "size": "1920x1080",
+          "size": "1080x1080",
           "enable_audio": true
         }
       }
@@ -697,7 +697,7 @@
       }
     },
     {
-      "name": "adaptive size token without a ratio becomes 16:9",
+      "name": "adaptive size token without a ratio stays adaptive",
       "hook": "buildSubmitRequest",
       "args": [
         {
@@ -725,7 +725,7 @@
           "model": "seedance-2.5",
           "prompt": "a",
           "seconds": 6,
-          "size": "1280x720",
+          "size": "adaptive-720p",
           "enable_audio": true
         }
       }
@@ -766,7 +766,7 @@
       }
     },
     {
-      "name": "declared 16:9 with other-aspect pixels is forced to 16:9",
+      "name": "explicit ratio rewrites a conflicting pixel size",
       "hook": "buildSubmitRequest",
       "args": [
         {
@@ -802,7 +802,7 @@
       }
     },
     {
-      "name": "explicit 9:16 ratio is rejected",
+      "name": "explicit 9:16 ratio is kept",
       "hook": "buildSubmitRequest",
       "args": [
         {
@@ -821,10 +821,24 @@
           }
         }
       ],
-      "expectedError": "aspect_ratio must be 16:9"
+      "expected": {
+        "url": "https://sd25.app/v1/videos",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer sk-test",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "model": "seedance-2.5",
+          "prompt": "a",
+          "seconds": 5,
+          "size": "720x1280",
+          "enable_audio": true
+        }
+      }
     },
     {
-      "name": "explicit 1:1 aspect is rejected",
+      "name": "explicit 1:1 aspect is kept",
       "hook": "protocols",
       "path": ["openai_video", "decodeRequest"],
       "args": [
@@ -845,10 +859,21 @@
           "stream": false
         }
       ],
-      "expectedError": "aspect_ratio must be 16:9"
+      "expected": {
+        "kind": "submit",
+        "model": "seedance-2.5",
+        "action": "text_to_video",
+        "requestBody": {
+          "model": "seedance-2.5",
+          "prompt": "a",
+          "seconds": 6,
+          "size": "1080x1080",
+          "enable_audio": true
+        }
+      }
     },
     {
-      "name": "explicit adaptive ratio is rejected",
+      "name": "explicit adaptive ratio is kept",
       "hook": "buildSubmitRequest",
       "args": [
         {
@@ -866,10 +891,24 @@
           }
         }
       ],
-      "expectedError": "aspect_ratio must be 16:9"
+      "expected": {
+        "url": "https://sd25.app/v1/videos",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer sk-test",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "model": "seedance-2.5",
+          "prompt": "a",
+          "seconds": 5,
+          "size": "adaptive-720p",
+          "enable_audio": true
+        }
+      }
     },
     {
-      "name": "unknown size is rejected without a size-must-match error",
+      "name": "unknown size is a parameter error",
       "hook": "buildSubmitRequest",
       "args": [
         {
@@ -887,7 +926,7 @@
           }
         }
       ],
-      "expectedError": "size must be a 16:9 pixel size (854x480, 1280x720, or 1920x1080)"
+      "expectedError": "size must be 480p, 720p, 1080p, adaptive-480p/720p/1080p, or a supported pixel size for 16:9, 9:16, 4:3, 3:4, 1:1, or 21:9"
     },
     {
       "name": "resolution words that disagree still conflict",
@@ -911,7 +950,7 @@
       "expectedError": "size conflicts with resolution"
     },
     {
-      "name": "extractUsageOnComplete ignores a non-16:9 size",
+      "name": "extractUsageOnComplete reads a 9:16 size",
       "hook": "extractUsageOnComplete",
       "args": [
         {},
@@ -924,11 +963,12 @@
       ],
       "expected": {
         "seconds": 7,
+        "resolution": "1080p",
         "enable_audio": false
       }
     },
     {
-      "name": "parseSubmitResponse drops a non-16:9 size",
+      "name": "parseSubmitResponse keeps a 9:16 size",
       "hook": "parseSubmitResponse",
       "args": [
         {},
@@ -948,11 +988,174 @@
         "taskId": "vid_123",
         "taskData": {
           "seconds": 5,
+          "size": "720x1280",
           "enable_audio": true,
           "status": "queued",
           "provider_status": "queued"
         }
       }
+    },
+    {
+      "name": "explicit 9:16 rewrites a 16:9 size",
+      "hook": "buildSubmitRequest",
+      "args": [
+        {
+          "baseUrl": "https://sd25.app/",
+          "apiKey": "sk-test",
+          "upstream": { "kind": "vendor" },
+          "files": [],
+          "action": "",
+          "model": "seedance-2.5",
+          "requestBody": {
+            "prompt": "a",
+            "seconds": 5,
+            "resolution": "720p",
+            "ratio": "9:16",
+            "size": "1280x720"
+          }
+        }
+      ],
+      "expected": {
+        "url": "https://sd25.app/v1/videos",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer sk-test",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "model": "seedance-2.5",
+          "prompt": "a",
+          "seconds": 5,
+          "size": "720x1280",
+          "enable_audio": true
+        }
+      }
+    },
+    {
+      "name": "explicit resolution keeps the aspect implied by size",
+      "hook": "buildSubmitRequest",
+      "args": [
+        {
+          "baseUrl": "https://sd25.app/",
+          "apiKey": "sk-test",
+          "upstream": { "kind": "vendor" },
+          "files": [],
+          "action": "",
+          "model": "seedance-2.5",
+          "requestBody": {
+            "prompt": "a",
+            "seconds": 5,
+            "resolution": "1080p",
+            "size": "720x1280"
+          }
+        }
+      ],
+      "expected": {
+        "url": "https://sd25.app/v1/videos",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer sk-test",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "model": "seedance-2.5",
+          "prompt": "a",
+          "seconds": 5,
+          "size": "1080x1920",
+          "enable_audio": true
+        }
+      }
+    },
+    {
+      "name": "4:3 and 21:9 stay available",
+      "hook": "buildSubmitRequest",
+      "args": [
+        {
+          "baseUrl": "https://sd25.app/",
+          "apiKey": "sk-test",
+          "upstream": { "kind": "vendor" },
+          "files": [],
+          "action": "",
+          "model": "seedance-2.5",
+          "requestBody": {
+            "prompt": "a",
+            "seconds": 5,
+            "resolution": "720p",
+            "aspect_ratio": "4:3"
+          }
+        }
+      ],
+      "expected": {
+        "url": "https://sd25.app/v1/videos",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer sk-test",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "model": "seedance-2.5",
+          "prompt": "a",
+          "seconds": 5,
+          "size": "960x720",
+          "enable_audio": true
+        }
+      }
+    },
+    {
+      "name": "21:9 size without a ratio stays 21:9",
+      "hook": "buildSubmitRequest",
+      "args": [
+        {
+          "baseUrl": "https://sd25.app/",
+          "apiKey": "sk-test",
+          "upstream": { "kind": "vendor" },
+          "files": [],
+          "action": "",
+          "model": "seedance-2.5",
+          "requestBody": {
+            "prompt": "a",
+            "seconds": 5,
+            "resolution": "720p",
+            "size": "1680x720"
+          }
+        }
+      ],
+      "expected": {
+        "url": "https://sd25.app/v1/videos",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer sk-test",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "model": "seedance-2.5",
+          "prompt": "a",
+          "seconds": 5,
+          "size": "1680x720",
+          "enable_audio": true
+        }
+      }
+    },
+    {
+      "name": "unknown ratio is a parameter error",
+      "hook": "buildSubmitRequest",
+      "args": [
+        {
+          "baseUrl": "https://sd25.app/",
+          "apiKey": "sk-test",
+          "upstream": { "kind": "vendor" },
+          "files": [],
+          "action": "",
+          "model": "seedance-2.5",
+          "requestBody": {
+            "prompt": "a",
+            "seconds": 5,
+            "resolution": "720p",
+            "ratio": "2:1"
+          }
+        }
+      ],
+      "expectedError": "aspect_ratio must be 16:9, 9:16, 4:3, 3:4, 1:1, 21:9 or adaptive"
     }
   ]
 }

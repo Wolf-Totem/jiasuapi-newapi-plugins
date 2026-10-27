@@ -200,9 +200,9 @@ curl -sS -X POST "$YOUR_NEW_API/v1/images/create" \
 - 默认 Base URL：`https://sd25.app`（渠道里已填写的 Base URL 优先；插件不内置密钥。插件 `meta` 不写 `website` / `baseUrl` / `author.url`）
 - 协议：`openai_video`（`POST /v1/videos`、`GET /v1/videos/:task_id`、`GET|HEAD /v1/videos/:task_id/content`）
 - 发给上游的 `model` 恒为 `seedance-2.5`
-- 画幅只支持 **16:9**。分辨率仍为 `480p` / `720p` / `1080p`（像素 `854x480` / `1280x720` / `1920x1080`）
+- 画幅保留 `16:9` / `9:16` / `4:3` / `3:4` / `1:1` / `21:9` / `adaptive`。分辨率仍为 `480p` / `720p` / `1080p`
 
-只传 `resolution`、不传画幅时，按该分辨率的 16:9 发出。`size` 若已是该分辨率的 16:9 像素则通过；若 `size` 是其它画幅的像素或 `adaptive-*`，且没有显式声明非 16:9，则改写成该分辨率的 16:9，不再报 `size must match resolution and aspect_ratio`。显式 `ratio` / `aspect_ratio` / `aspect` 不是 `16:9` 时拒绝，错误为 `aspect_ratio must be 16:9`。
+`size`、`resolution`、`ratio` 可以一起传。显式画幅优先，否则用像素 `size` 自己的画幅；两边都没给画幅时才默认 16:9。最终发出该分辨率和画幅对应的像素尺寸，不再因为对不上而报 `size must match resolution and aspect_ratio`。认不出的 `size` 或画幅会返回参数错误。
 
 可 pin 的名字（`meta.models` 与 `protocols.openai_video.models`）：
 
