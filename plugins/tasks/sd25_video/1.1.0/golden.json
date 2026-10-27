@@ -1,0 +1,527 @@
+{
+  "cases": [
+    {
+      "name": "decode pins app-秒 while body model is the facade",
+      "hook": "protocols",
+      "path": [
+        "openai_video",
+        "decodeRequest"
+      ],
+      "args": [
+        {
+          "body": {
+            "kind": "json",
+            "value": {
+              "model": "sd2.5-G3-特惠-1",
+              "prompt": "城市夜景",
+              "seconds": "5",
+              "resolution": "720p",
+              "ratio": "16:9",
+              "enable_audio": true
+            }
+          },
+          "model": "seedance-2.5-app-秒",
+          "upstreamModel": "seedance-2.5",
+          "protocol": "openai_video",
+          "operation": "create",
+          "stream": false
+        }
+      ],
+      "expected": {
+        "kind": "submit",
+        "model": "seedance-2.5-app-秒",
+        "action": "text_to_video",
+        "requestBody": {
+          "model": "seedance-2.5",
+          "prompt": "城市夜景",
+          "seconds": 5,
+          "size": "1280x720",
+          "enable_audio": true
+        }
+      }
+    },
+    {
+      "name": "decode echoes a pinned facade and rewrites the upstream model",
+      "hook": "protocols",
+      "path": [
+        "openai_video",
+        "decodeRequest"
+      ],
+      "args": [
+        {
+          "body": {
+            "kind": "json",
+            "value": {
+              "model": "sd2.5-G3-特惠-2",
+              "prompt": "a",
+              "seconds": 8,
+              "size": "720p"
+            }
+          },
+          "model": "sd2.5-G3-特惠-2",
+          "protocol": "openai_video",
+          "operation": "create",
+          "stream": false
+        }
+      ],
+      "expected": {
+        "kind": "submit",
+        "model": "sd2.5-G3-特惠-2",
+        "action": "text_to_video",
+        "requestBody": {
+          "model": "seedance-2.5",
+          "prompt": "a",
+          "seconds": 8,
+          "size": "1280x720",
+          "enable_audio": true
+        }
+      }
+    },
+    {
+      "name": "decode rejects a body model this plugin does not serve",
+      "hook": "protocols",
+      "path": [
+        "openai_video",
+        "decodeRequest"
+      ],
+      "args": [
+        {
+          "body": {
+            "kind": "json",
+            "value": {
+              "model": "sora-2",
+              "prompt": "a",
+              "seconds": 5,
+              "size": "1280x720"
+            }
+          },
+          "model": "seedance-2.5-app-条",
+          "protocol": "openai_video",
+          "operation": "create",
+          "stream": false
+        }
+      ],
+      "expectedError": "model must be seedance-2.5 or a declared SD2.5 name"
+    },
+    {
+      "name": "decode rejects multipart",
+      "hook": "protocols",
+      "path": [
+        "openai_video",
+        "decodeRequest"
+      ],
+      "args": [
+        {
+          "body": {
+            "kind": "multipart",
+            "fields": {},
+            "files": []
+          },
+          "model": "seedance-2.5",
+          "protocol": "openai_video",
+          "operation": "create",
+          "stream": false
+        }
+      ],
+      "expectedError": "multipart is not supported"
+    },
+    {
+      "name": "buildSubmit accepts OriginModelName facade and sends seedance-2.5",
+      "hook": "buildSubmitRequest",
+      "args": [
+        {
+          "baseUrl": "https://sd25.app/",
+          "apiKey": "sk-test",
+          "authHeader": "Bearer sk-test",
+          "upstream": {
+            "kind": "vendor"
+          },
+          "files": [],
+          "action": "",
+          "publicTaskId": "task_pub",
+          "requestHeaders": {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          "model": "sd2.5-G3-特惠-1",
+          "upstreamModel": "seedance-2.5-app-秒",
+          "requestBody": {
+            "model": "seedance-2.5",
+            "prompt": "城市夜景",
+            "seconds": 5,
+            "size": "1280x720",
+            "enable_audio": true
+          }
+        }
+      ],
+      "expected": {
+        "url": "https://sd25.app/v1/videos",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer sk-test",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "model": "seedance-2.5",
+          "prompt": "城市夜景",
+          "seconds": 5,
+          "size": "1280x720",
+          "enable_audio": true
+        }
+      }
+    },
+    {
+      "name": "buildSubmit accepts an unlisted UpstreamModelName without rejecting model mapping",
+      "hook": "buildSubmitRequest",
+      "args": [
+        {
+          "baseUrl": "https://sd25.app/",
+          "apiKey": "sk-test",
+          "authHeader": "Bearer sk-test",
+          "upstream": {
+            "kind": "vendor"
+          },
+          "files": [],
+          "action": "",
+          "publicTaskId": "task_pub",
+          "requestHeaders": {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          "model": "sd2.5-G3-特惠-1",
+          "upstreamModel": "vendor-endpoint-id",
+          "requestBody": {
+            "model": "sd2.5-G3-特惠-1",
+            "prompt": "夜景",
+            "seconds": 6,
+            "resolution": "1080p",
+            "aspect": "1:1",
+            "enable_audio": false
+          }
+        }
+      ],
+      "expected": {
+        "url": "https://sd25.app/v1/videos",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer sk-test",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "model": "seedance-2.5",
+          "prompt": "夜景",
+          "seconds": 6,
+          "size": "1080x1080",
+          "enable_audio": false
+        }
+      }
+    },
+    {
+      "name": "buildSubmit rejects remix",
+      "hook": "buildSubmitRequest",
+      "args": [
+        {
+          "baseUrl": "https://sd25.app/",
+          "apiKey": "sk-test",
+          "authHeader": "Bearer sk-test",
+          "upstream": {
+            "kind": "vendor"
+          },
+          "files": [],
+          "action": "remix",
+          "publicTaskId": "task_pub",
+          "requestHeaders": {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          "model": "seedance-2.5",
+          "requestBody": {
+            "prompt": "x",
+            "seconds": 4,
+            "size": "1280x720"
+          }
+        }
+      ],
+      "expectedError": "remix"
+    },
+    {
+      "name": "extractUsage from a normalized body",
+      "hook": "extractUsage",
+      "args": [
+        {
+          "baseUrl": "https://sd25.app/",
+          "apiKey": "sk-test",
+          "authHeader": "Bearer sk-test",
+          "upstream": {
+            "kind": "vendor"
+          },
+          "files": [],
+          "action": "",
+          "publicTaskId": "task_pub",
+          "requestHeaders": {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          "model": "sd2.5-G3-特惠-1",
+          "upstreamModel": "vendor-endpoint-id",
+          "requestBody": {
+            "model": "seedance-2.5",
+            "prompt": "城市夜景",
+            "seconds": 5,
+            "size": "1280x720",
+            "enable_audio": true
+          }
+        }
+      ],
+      "expected": {
+        "seconds": 5,
+        "resolution": "720p",
+        "enable_audio": true
+      }
+    },
+    {
+      "name": "extractUsageOnComplete reads upstream facts",
+      "hook": "extractUsageOnComplete",
+      "args": [
+        {},
+        {},
+        {
+          "seconds": 7,
+          "size": "1920x1080",
+          "enable_audio": false
+        }
+      ],
+      "expected": {
+        "seconds": 7,
+        "resolution": "1080p",
+        "enable_audio": false
+      }
+    },
+    {
+      "name": "parseSubmitResponse",
+      "hook": "parseSubmitResponse",
+      "args": [
+        {},
+        {
+          "statusCode": 200,
+          "headers": {},
+          "body": {
+            "id": "vid_123",
+            "status": "queued",
+            "seconds": 5,
+            "size": "1280x720",
+            "enable_audio": true
+          }
+        }
+      ],
+      "expected": {
+        "taskId": "vid_123",
+        "taskData": {
+          "seconds": 5,
+          "size": "1280x720",
+          "enable_audio": true,
+          "status": "queued",
+          "provider_status": "queued"
+        }
+      }
+    },
+    {
+      "name": "parseTaskResult in progress",
+      "hook": "parseTaskResult",
+      "args": [
+        {},
+        {
+          "status": "processing",
+          "progress": 40
+        },
+        {
+          "status": 200,
+          "headers": {}
+        }
+      ],
+      "expected": {
+        "status": "IN_PROGRESS",
+        "progress": "40%"
+      }
+    },
+    {
+      "name": "parseTaskResult unknown status stays UNKNOWN",
+      "hook": "parseTaskResult",
+      "args": [
+        {},
+        {
+          "status": "mystery"
+        },
+        {
+          "status": 200,
+          "headers": {}
+        }
+      ],
+      "expected": {
+        "status": "UNKNOWN",
+        "reason": "暂时无法查询最新状态，请继续查询原任务。"
+      }
+    },
+    {
+      "name": "buildQueryRequest",
+      "hook": "buildQueryRequest",
+      "args": [
+        {
+          "baseUrl": "https://sd25.app/",
+          "apiKey": "sk-test",
+          "authHeader": "Bearer sk-test",
+          "upstream": {
+            "kind": "vendor"
+          },
+          "files": [],
+          "action": "",
+          "publicTaskId": "task_pub",
+          "requestHeaders": {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          "taskId": "vid_123",
+          "model": "sd2.5-G3-特惠-1",
+          "upstreamModel": "seedance-2.5"
+        }
+      ],
+      "expected": {
+        "url": "https://sd25.app/v1/videos/vid_123",
+        "method": "GET",
+        "headers": {
+          "Authorization": "Bearer sk-test"
+        }
+      }
+    },
+    {
+      "name": "listArtifacts on success",
+      "hook": "listArtifacts",
+      "args": [
+        {
+          "taskId": "task_pub",
+          "status": "SUCCESS",
+          "action": "text_to_video",
+          "data": {},
+          "producerVersion": "1.1.0"
+        }
+      ],
+      "expected": [
+        {
+          "key": "video",
+          "type": "video"
+        }
+      ]
+    },
+    {
+      "name": "buildContentRequest",
+      "hook": "buildContentRequest",
+      "args": [
+        {
+          "baseUrl": "https://sd25.app/",
+          "apiKey": "sk-test",
+          "authHeader": "Bearer sk-test",
+          "upstream": {
+            "kind": "vendor"
+          },
+          "files": [],
+          "action": "",
+          "publicTaskId": "task_pub",
+          "requestHeaders": {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          "artifactKey": "video",
+          "upstreamTaskId": "vid_123",
+          "clientRequest": {
+            "method": "GET",
+            "headers": {
+              "Range": "bytes=0-1"
+            }
+          }
+        }
+      ],
+      "expected": {
+        "url": "https://sd25.app/v1/videos/vid_123/content",
+        "method": "GET",
+        "headers": {
+          "Authorization": "Bearer sk-test",
+          "X-Media-Protocol": "openai_video",
+          "Cache-Control": "no-cache, no-store, max-age=0",
+          "Pragma": "no-cache",
+          "Range": "bytes=0-1"
+        }
+      }
+    },
+    {
+      "name": "render keeps the literal when the host context has no model",
+      "hook": "protocols",
+      "path": [
+        "openai_video",
+        "render"
+      ],
+      "args": [
+        {
+          "protocol": "openai_video",
+          "operation": "retrieve"
+        },
+        {
+          "task_id": "task_pub",
+          "status": "SUCCESS",
+          "progress": "100%",
+          "created_at": 10,
+          "finished_at": 20,
+          "data": {
+            "status": "completed",
+            "seconds": 5,
+            "size": "1280x720",
+            "enable_audio": true
+          }
+        }
+      ],
+      "expected": {
+        "id": "task_pub",
+        "object": "video",
+        "model": "seedance-2.5",
+        "status": "completed",
+        "created_at": 10,
+        "progress": 100,
+        "seconds": 5,
+        "size": "1280x720",
+        "enable_audio": true,
+        "provider_status": "completed",
+        "completed_at": 20
+      }
+    },
+    {
+      "name": "render echoes ctx.model when the host supplies it",
+      "hook": "protocols",
+      "path": [
+        "openai_video",
+        "render"
+      ],
+      "args": [
+        {
+          "model": "sd2.5-G3-特惠-1"
+        },
+        {
+          "task_id": "task_pub",
+          "status": "IN_PROGRESS",
+          "progress": "10%",
+          "created_at": 10,
+          "data": {
+            "status": "in_progress"
+          }
+        }
+      ],
+      "expected": {
+        "id": "task_pub",
+        "object": "video",
+        "model": "sd2.5-G3-特惠-1",
+        "status": "in_progress",
+        "created_at": 10,
+        "progress": 10,
+        "provider_status": "in_progress"
+      }
+    }
+  ]
+}

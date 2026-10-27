@@ -116,6 +116,46 @@
           "baseUrl": "https://ai.jiasuapi.com"
         }
       ]
+    },
+    {
+      "key": "sd25_video",
+      "name": "SD2.5",
+      "icon": "text:SD",
+      "website": "https://sd25.app",
+      "description": {
+        "en": "Seedance 2.5 video on sd25.app via the OpenAI video API. Duration, resolution, audio, and reference media",
+        "zh": "通过 sd25.app 的 OpenAI 视频接口生成 Seedance 2.5。支持时长、分辨率、声音与参考素材"
+      },
+      "protocols": [
+        {
+          "name": "openai_video",
+          "models": [
+            "seedance-2.5",
+            "seedance-2.5-app-秒",
+            "seedance-2.5-app-条",
+            "sd2.5-G3-特惠-1",
+            "sd2.5-G3-特惠-2"
+          ]
+        }
+      ],
+      "models": [
+        "seedance-2.5",
+        "seedance-2.5-app-秒",
+        "seedance-2.5-app-条",
+        "sd2.5-G3-特惠-1",
+        "sd2.5-G3-特惠-2"
+      ],
+      "latest": "1.1.0",
+      "versions": [
+        {
+          "version": "1.1.0",
+          "path": "plugins/tasks/sd25_video/1.1.0/plugin.js",
+          "sha256": "33420e6b25164c6b2caee815f0f6f84bd3f7efff8cb1b44d4b880e20238e2ff3",
+          "minApiVersion": 1,
+          "kind": "task",
+          "baseUrl": "https://sd25.app"
+        }
+      ]
     }
   ]
 }
