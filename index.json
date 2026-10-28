@@ -145,7 +145,7 @@
         "sd2.5-G3-特惠-1",
         "sd2.5-G3-特惠-2"
       ],
-      "latest": "1.1.1",
+      "latest": "1.1.2",
       "versions": [
         {
           "version": "1.1.0",
@@ -159,6 +159,14 @@
           "version": "1.1.1",
           "path": "plugins/tasks/sd25_video/1.1.1/plugin.js",
           "sha256": "db06b1c9a6f1bb06653eb6771a2a8f1a9786193159ec583ede929b4c978b7784",
+          "minApiVersion": 1,
+          "kind": "task",
+          "baseUrl": "https://sd25.app"
+        },
+        {
+          "version": "1.1.2",
+          "path": "plugins/tasks/sd25_video/1.1.2/plugin.js",
+          "sha256": "f0b78544021cb2852229c8739e3500adf91a83b39b063bb380dbd9ed4aff80dc",
           "minApiVersion": 1,
           "kind": "task",
           "baseUrl": "https://sd25.app"

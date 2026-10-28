@@ -196,13 +196,15 @@ curl -sS -X POST "$YOUR_NEW_API/v1/images/create" \
 ## SD2.5 视频（`sd25_video`）
 
 - 插件 key：`sd25_video`
-- 当前版本：`1.1.1`（`1.1.0` 仍保留）
+- 当前版本：`1.1.2`（`1.1.0`、`1.1.1` 仍保留）
 - 默认 Base URL：`https://sd25.app`（渠道里已填写的 Base URL 优先；插件不内置密钥。插件 `meta` 不写 `website` / `baseUrl` / `author.url`）
 - 协议：`openai_video`（`POST /v1/videos`、`GET /v1/videos/:task_id`、`GET|HEAD /v1/videos/:task_id/content`）
 - 发给上游的 `model` 恒为 `seedance-2.5`
 - 画幅保留 `16:9` / `9:16` / `4:3` / `3:4` / `1:1` / `21:9` / `adaptive`。分辨率仍为 `480p` / `720p` / `1080p`
 
-`size`、`resolution`、`ratio` 可以一起传。显式画幅优先，否则用像素 `size` 自己的画幅；两边都没给画幅时才默认 16:9。最终发出该分辨率和画幅对应的像素尺寸，不再因为对不上而报 `size must match resolution and aspect_ratio`。认不出的 `size` 或画幅会返回参数错误。
+上游接受两种等价写法：像素 `size`（如 `1280x720`），或成对的 `resolution` + `aspect_ratio`（如 `720p` + `16:9`）。三者同时出现且不一致时上游会拒绝。查询结果仍返回 `size`。
+
+客户端已经带了合法分辨率（`resolution` / `video_resolution`，或 `size` 为 `480p` / `720p` / `1080p`）时，`decodeRequest` 和出站 `POST /v1/videos` 保留 `resolution` 与 `aspect_ratio`（`ratio` / `aspect` 映射为 `aspect_ratio`），不再改写成只有像素 `size`。主机按 `resolution` / `video_resolution` 计费时因此能看到客户端档位，不会因为缺字段注入模型默认 `720p`。只传像素 `size`（含 `adaptive-480p` / `adaptive-720p` / `adaptive-1080p`）时仍只发 `size`。缺画幅时默认 `16:9`。显式画幅优先；否则用像素 `size` 暗示的画幅。会和分辨率冲突的像素 `size` 不一并发出。认不出的 `size` 或画幅会返回参数错误。
 
 可 pin 的名字（`meta.models` 与 `protocols.openai_video.models`）：
 
@@ -230,6 +232,8 @@ plugins/tasks/sd25_video/1.1.0/plugin.js
 plugins/tasks/sd25_video/1.1.0/golden.json
 plugins/tasks/sd25_video/1.1.1/plugin.js
 plugins/tasks/sd25_video/1.1.1/golden.json
+plugins/tasks/sd25_video/1.1.2/plugin.js
+plugins/tasks/sd25_video/1.1.2/golden.json
 ```
 
 ## 本地校验
@@ -237,8 +241,8 @@ plugins/tasks/sd25_video/1.1.1/golden.json
 ```bash
 node --check plugins/tasks/jiasuapi/1.0.2/plugin.js
 sha256sum plugins/tasks/jiasuapi/1.0.2/plugin.js   # 应与 index.json versions[].sha256 一致
-node --check plugins/tasks/sd25_video/1.1.1/plugin.js
-sha256sum plugins/tasks/sd25_video/1.1.1/plugin.js   # 应与 index.json versions[].sha256 一致
+node --check plugins/tasks/sd25_video/1.1.2/plugin.js
+sha256sum plugins/tasks/sd25_video/1.1.2/plugin.js   # 应与 index.json versions[].sha256 一致
 ```
 
 若本机有 NewAPI 源码：
