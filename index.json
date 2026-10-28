@@ -172,6 +172,80 @@
           "baseUrl": "https://sd25.app"
         }
       ]
+    },
+    {
+      "key": "megabyai",
+      "name": "MegaAi",
+      "icon": "text:Mega",
+      "website": "https://megaviews.top",
+      "description": {
+        "en": "MegaAi video generation via the OpenAI-compatible /v1/videos API. Channel base is the site origin, for example https://megaviews.top",
+        "zh": "通过 MegaAi 的 OpenAI 兼容视频接口（/v1/videos）生成视频。渠道 Base URL 填站点根地址，例如 https://megaviews.top"
+      },
+      "protocols": [
+        {
+          "name": "openai_video",
+          "models": [
+            "S-seedance-2.5-480p",
+            "T1-seedance-2.5",
+            "T2-seedance-2.5",
+            "T3-seedance-2.5",
+            "bb-2.5-301010",
+            "minimax-h3-f",
+            "minimax_h3_zm_u24",
+            "sd-2.0",
+            "sd-2.5-720p",
+            "sd-fast",
+            "sd-mini",
+            "sd2.5-pro",
+            "sd2.5max900",
+            "seedance-2.0-fast-m1",
+            "seedance-2.0-m1",
+            "seedance-2.0-mini-m1",
+            "seedance-2.5-m1",
+            "seedance-2.5-m3",
+            "video-sd20-10s",
+            "wan-3.0",
+            "wan3.0-video",
+            "wan3.0-video-prime"
+          ]
+        }
+      ],
+      "models": [
+        "S-seedance-2.5-480p",
+        "T1-seedance-2.5",
+        "T2-seedance-2.5",
+        "T3-seedance-2.5",
+        "bb-2.5-301010",
+        "minimax-h3-f",
+        "minimax_h3_zm_u24",
+        "sd-2.0",
+        "sd-2.5-720p",
+        "sd-fast",
+        "sd-mini",
+        "sd2.5-pro",
+        "sd2.5max900",
+        "seedance-2.0-fast-m1",
+        "seedance-2.0-m1",
+        "seedance-2.0-mini-m1",
+        "seedance-2.5-m1",
+        "seedance-2.5-m3",
+        "video-sd20-10s",
+        "wan-3.0",
+        "wan3.0-video",
+        "wan3.0-video-prime"
+      ],
+      "latest": "1.0.0",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "plugins/tasks/megabyai/1.0.0/plugin.js",
+          "sha256": "16926ef4220847773c2f44caba399eef5da2ebcae2b3c19395a64a81689a8715",
+          "minApiVersion": 1,
+          "kind": "task",
+          "baseUrl": "https://megaviews.top"
+        }
+      ]
     }
   ]
 }

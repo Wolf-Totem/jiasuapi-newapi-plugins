@@ -1,6 +1,6 @@
 # 佳速API · NewAPI 任务插件市场源
 
-面向 **其他 NewAPI 实例** 的 GitHub 市场源。本仓库现有两个任务插件：`jiasuapi`（佳速API 图片 / 视频）和 `sd25_video`（sd25.app 上的 Seedance 2.5 视频，见下方「SD2.5 视频」）。
+面向 **其他 NewAPI 实例** 的 GitHub 市场源。本仓库现有三个任务插件：`jiasuapi`（佳速API 图片 / 视频）、`sd25_video`（sd25.app 上的 Seedance 2.5 视频，见下方「SD2.5 视频」）和 `megabyai`（MegaAi 视频，见下方「MegaAi 视频」）。
 
 ## 佳速API（`jiasuapi`）
 
@@ -217,6 +217,41 @@ curl -sS -X POST "$YOUR_NEW_API/v1/images/create" \
 
 `decodeRequest` 返回的 model 等于主机 pin 的名字。`buildSubmitRequest` 接受 OriginModelName、别名和 UpstreamModelName，请求体里的 model 仍写成 `seedance-2.5`。
 
+## MegaAi 视频（`megabyai`）
+
+- 插件 key：`megabyai`
+- 当前版本：`1.0.0`
+- 显示名：MegaAi
+- 官方文档：https://megaviews.top/docs （https://newapi.megabyai.cc/docs 是同一份文档）
+- 站点：`https://megaviews.top`，也可使用 `https://www.megaviews.top`、`https://newapi.megaviews.top`、`https://newapi.megabyai.cc`
+- 协议：`openai_video`（主机路径 `POST /v1/videos`、`GET /v1/videos/:task_id`、`GET|HEAD /v1/videos/:task_id/content`）
+- 不声明 `channelTypes`。新建渠道时类型选 **任务插件**，绑定插件 `megabyai`
+- 插件文件不包含密钥。不要对上游做付费试提交
+
+渠道 **Base URL** 填站点根地址，例如 `https://megaviews.top`（不要末尾斜杠，不要自带 `/v1`）。插件按 QuantumNous `openai_video` 拼接 `/v1/videos`。若渠道已写成 OpenAI SDK 习惯的 `https://megaviews.top/v1`，插件会去掉末尾这一段 `/v1`，避免请求打到 `/v1/v1/videos`。
+
+鉴权为 `Authorization: Bearer <渠道密钥>`。
+
+上游就是 MegaAi 文档里的视频任务，插件不另做一套字段改写：
+
+| 步骤 | 上游 |
+| --- | --- |
+| 创建 | `POST /v1/videos`（JSON 或 multipart） |
+| 查询 | `GET /v1/videos/{task_id}` |
+| 成片 | `GET` 或 `HEAD /v1/videos/{task_id}/content` |
+
+JSON 原样转发文档字段：`model`、`prompt`、`duration`、`ratio`、`resolution`、`seed`、`referenceImages`、`referenceVideos`、`referenceAudios`、`metadata`。部分渠道使用的 `seconds`、`size`、`image`、`input_reference` 同样原样转发。`seconds` 与 `duration` 只在校验时互相认读（1–3600 秒，与官方 Sora 任务插件一致）；JSON 体不会把 `duration` 改写成 `seconds`。multipart 与官方 Sora 插件相同：表单只有 `duration` 时，会同时带上数值 `seconds`。出站 `model` 使用渠道模型映射后的名字；没有映射时与客户端模型一致。
+
+任务 ID 读取 `id` 或 `task_id`。兼容响应若把它们放在嵌套的 `data` 里，也从 `data.id` / `data.task_id` 读取。状态 `queued`、`in_progress`、`completed`、`failed`；文档里的兼容状态 `succeeded` 视为成功。认不出的状态保持未知，不会当成进行中。
+
+计费用量只申报 `seconds`（单位秒），取请求或完成结果中的 `duration` / `seconds`。插件不写价格或倍率。
+
+可 pin 的视频模型（`meta.models` 与 `protocols.openai_video.models`，共 22 个；不含对话 / 图片模型）：
+
+`S-seedance-2.5-480p`、`T1-seedance-2.5`、`T2-seedance-2.5`、`T3-seedance-2.5`、`bb-2.5-301010`、`minimax-h3-f`、`minimax_h3_zm_u24`、`sd-2.0`、`sd-2.5-720p`、`sd-fast`、`sd-mini`、`sd2.5-pro`、`sd2.5max900`、`seedance-2.0-fast-m1`、`seedance-2.0-m1`、`seedance-2.0-mini-m1`、`seedance-2.5-m1`、`seedance-2.5-m3`、`video-sd20-10s`、`wan-3.0`、`wan3.0-video`、`wan3.0-video-prime`
+
+本插件不注册 `/megabyai/...` 或公开的 `/v1/videos`。主机协议路径仍由 `openai_video` 提供。
+
 ## 仓库结构
 
 ```text
@@ -234,6 +269,8 @@ plugins/tasks/sd25_video/1.1.1/plugin.js
 plugins/tasks/sd25_video/1.1.1/golden.json
 plugins/tasks/sd25_video/1.1.2/plugin.js
 plugins/tasks/sd25_video/1.1.2/golden.json
+plugins/tasks/megabyai/1.0.0/plugin.js
+plugins/tasks/megabyai/1.0.0/README.md
 ```
 
 ## 本地校验
@@ -243,6 +280,8 @@ node --check plugins/tasks/jiasuapi/1.0.2/plugin.js
 sha256sum plugins/tasks/jiasuapi/1.0.2/plugin.js   # 应与 index.json versions[].sha256 一致
 node --check plugins/tasks/sd25_video/1.1.2/plugin.js
 sha256sum plugins/tasks/sd25_video/1.1.2/plugin.js   # 应与 index.json versions[].sha256 一致
+node --check plugins/tasks/megabyai/1.0.0/plugin.js
+sha256sum plugins/tasks/megabyai/1.0.0/plugin.js   # 应与 index.json versions[].sha256 一致
 ```
 
 若本机有 NewAPI 源码：
