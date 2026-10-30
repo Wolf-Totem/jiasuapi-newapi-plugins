@@ -246,6 +246,64 @@
           "baseUrl": "https://megaviews.top"
         }
       ]
+    },
+    {
+      "key": "guangying",
+      "name": "光影 AI",
+      "icon": "text:光影",
+      "website": "https://guangying.store/",
+      "description": {
+        "en": "Portrait Seedance 2.0 video on guangying.store. Three vertical models at 720p; reference media must already be a Guangying fileId",
+        "zh": "通过光影 AI（guangying.store）生成竖屏 Seedance 2.0 视频。仅三个竖屏模型，720p，参考素材必须已是光影 fileId"
+      },
+      "routes": [
+        {
+          "method": "POST",
+          "path": "/guangying/v1/video/generations",
+          "type": "submit",
+          "action": "video",
+          "decode": "decodeVideoSubmit",
+          "render": "taskCreated",
+          "models": [
+            "gy-model-13",
+            "gy-model-20",
+            "gy-model-19"
+          ]
+        },
+        {
+          "method": "GET",
+          "path": "/guangying/v1/tasks/:task_id",
+          "type": "query",
+          "render": "taskStatus",
+          "taskIdParam": "task_id"
+        }
+      ],
+      "protocols": [
+        {
+          "name": "openai_video",
+          "models": [
+            "gy-model-13",
+            "gy-model-20",
+            "gy-model-19"
+          ]
+        }
+      ],
+      "models": [
+        "gy-model-13",
+        "gy-model-20",
+        "gy-model-19"
+      ],
+      "latest": "1.0.0",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "plugins/tasks/guangying/1.0.0/plugin.js",
+          "sha256": "18de7d5604ad1fa398384f90fd8ef057787b6583e8f0889ed26b146541d6c7b3",
+          "minApiVersion": 1,
+          "kind": "task",
+          "baseUrl": "https://guangying.store"
+        }
+      ]
     }
   ]
 }
