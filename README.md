@@ -255,13 +255,13 @@ JSON 原样转发文档字段：`model`、`prompt`、`duration`、`ratio`、`res
 ## 光影 AI（`guangying`）
 
 - 插件 key：`guangying`
-- 当前版本：`1.0.0`
+- 当前版本：`1.0.2`（`1.0.0` 仍保留）
 - 显示名：光影 AI
 - 站点：https://guangying.store/ （`www.guangying.store` 也可）
 - 不声明 `channelTypes`。新建渠道时类型选 **任务插件**，绑定插件 `guangying`
 - 插件文件不包含密钥。不要对上游做付费试提交
 
-渠道 **Base URL** 填站点根地址，例如 `https://guangying.store`（不要末尾斜杠，不要自带 `/v1`）。若 Base URL 已写成 `https://guangying.store/v1`，插件会去掉末尾这一段 `/v1`。
+渠道 **Base URL** 填站点根地址，例如 `https://guangying.store` 或 `https://api.guangying.store`（不要末尾斜杠，不要自带 `/v1`）。若 Base URL 已写成 `https://guangying.store/v1`，插件会去掉末尾这一段 `/v1`。
 
 `openai_video` 仍是主机侧协议（`POST /v1/videos`、`GET /v1/videos/:task_id`、`GET|HEAD /v1/videos/:task_id/content`）。光影创建接口不是 `/v1/videos`，驱动会改写成厂商路径。原生调试路由在 `/guangying/...`，不注册主机的 `/v1/videos`。
 
@@ -281,11 +281,13 @@ JSON 原样转发文档字段：`model`、`prompt`、`duration`、`ratio`、`res
 
 参考素材必须是光影 `POST /v1/media/uploads` 返回的 `fileId`。只传 URL 或 multipart 文件时，`buildSubmitRequest` 抛错，主机记为 `plugin_request_invalid`。本插件不会代为上传。`gy-model-13` 可以不带素材做文生视频；Fast / Mini 至少 1 个图片 `fileId`，且不接受视频或音频。
 
+`1.0.2` 的 `claimedModel` 接受渠道 pin、上游 id，以及主机 `param_routing` 写进 `body.model` 的 select / internal 名字（例如 `sd2.0-满血-guangying`）。只有声明了另一个白名单上游 id、且与实际发出的模型不同时才拒绝。
+
 状态：`queued` → `QUEUED`，`processing` → `IN_PROGRESS`，`succeeded` → `SUCCESS`，`failed` → `FAILURE`，其它 → `UNKNOWN`（不会当成进行中）。`requires_attention` 映射为 `FAILURE`，并写入说明：上游已停止自动重试，需要联系运营，不能把它当成已确认的生成失败或自动退款依据。主机对 `FAILURE` 仍会走自己的失败退款链。
 
 进度写成 `"N%"`。光影文档里的进度是 0–100 整数，默认不乘 100。只有落在 `(0, 1)` 且原文没有 `%` 的小数才乘 100（例如 `0.37` → `37%`）。整数 `1` 视为 1%，不会乘成 `100%`。非成功状态最高写到 `99%`。
 
-计费只申报 `seconds`。插件不写价格。成片 CDN 域名尚未从真实成功响应确认，因此 `allowedHosts` 只有 `guangying.store` 与 `www.guangying.store`。
+计费只申报 `seconds`。插件不写价格。成片 CDN 域名尚未从真实成功响应确认。`1.0.2` 的 `allowedHosts` 为 `guangying.store`、`www.guangying.store` 与 `api.guangying.store`。
 
 ## 仓库结构
 
@@ -308,6 +310,7 @@ plugins/tasks/megabyai/1.0.0/plugin.js
 plugins/tasks/megabyai/1.0.0/README.md
 plugins/tasks/guangying/1.0.0/plugin.js
 plugins/tasks/guangying/1.0.0/README.md
+plugins/tasks/guangying/1.0.2/plugin.js
 ```
 
 ## 本地校验
@@ -319,8 +322,8 @@ node --check plugins/tasks/sd25_video/1.1.2/plugin.js
 sha256sum plugins/tasks/sd25_video/1.1.2/plugin.js   # 应与 index.json versions[].sha256 一致
 node --check plugins/tasks/megabyai/1.0.0/plugin.js
 sha256sum plugins/tasks/megabyai/1.0.0/plugin.js   # 应与 index.json versions[].sha256 一致
-node --check plugins/tasks/guangying/1.0.0/plugin.js
-sha256sum plugins/tasks/guangying/1.0.0/plugin.js   # 应与 index.json versions[].sha256 一致
+node --check plugins/tasks/guangying/1.0.2/plugin.js
+sha256sum plugins/tasks/guangying/1.0.2/plugin.js   # 应与 index.json versions[].sha256 一致
 ```
 
 若本机有 NewAPI 源码：
