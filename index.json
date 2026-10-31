@@ -293,12 +293,20 @@
         "gy-model-20",
         "gy-model-19"
       ],
-      "latest": "1.0.0",
+      "latest": "1.0.2",
       "versions": [
         {
           "version": "1.0.0",
           "path": "plugins/tasks/guangying/1.0.0/plugin.js",
           "sha256": "18de7d5604ad1fa398384f90fd8ef057787b6583e8f0889ed26b146541d6c7b3",
+          "minApiVersion": 1,
+          "kind": "task",
+          "baseUrl": "https://guangying.store"
+        },
+        {
+          "version": "1.0.2",
+          "path": "plugins/tasks/guangying/1.0.2/plugin.js",
+          "sha256": "c26cf68965456833f181b783e171c3ea2ad3e7954cdf03e4bc26050b81c809be",
           "minApiVersion": 1,
           "kind": "task",
           "baseUrl": "https://guangying.store"
