@@ -312,6 +312,38 @@
           "baseUrl": "https://guangying.store"
         }
       ]
+    },
+    {
+      "key": "niney",
+      "name": "9Y API",
+      "icon": "text:9Y",
+      "website": "https://9yapi.shop",
+      "description": {
+        "en": "9Y API video for DB-SD-2.5 only. Fixed 30s 720p; aspect ratio and up to 10 public HTTPS reference images. Channel base is the site origin, for example https://9yapi.shop",
+        "zh": "通过 9Y API（9yapi.shop）生成视频，仅白名单模型 DB-SD-2.5。固定 30 秒 720p，可选画幅和最多 10 张公开 HTTPS 参考图。渠道 Base URL 填站点根地址，例如 https://9yapi.shop"
+      },
+      "protocols": [
+        {
+          "name": "openai_video",
+          "models": [
+            "DB-SD-2.5"
+          ]
+        }
+      ],
+      "models": [
+        "DB-SD-2.5"
+      ],
+      "latest": "1.0.0",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "path": "plugins/tasks/niney/1.0.0/plugin.js",
+          "sha256": "625f81f3b27b3a4ac8eabd36f5c3f0247f840b7d1e1cb4d2c4b40afff9a503da",
+          "minApiVersion": 1,
+          "kind": "task",
+          "baseUrl": "https://9yapi.shop"
+        }
+      ]
     }
   ]
 }

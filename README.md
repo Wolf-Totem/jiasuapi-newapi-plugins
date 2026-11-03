@@ -1,6 +1,6 @@
 # 佳速API · NewAPI 任务插件市场源
 
-面向 **其他 NewAPI 实例** 的 GitHub 市场源。本仓库现有四个任务插件：`jiasuapi`（佳速API 图片 / 视频）、`sd25_video`（sd25.app 上的 Seedance 2.5 视频，见下方「SD2.5 视频」）、`megabyai`（MegaAi 视频，见下方「MegaAi 视频」）和 `guangying`（光影 AI 竖屏 Seedance 2.0，见下方「光影 AI」）。
+面向 **其他 NewAPI 实例** 的 GitHub 市场源。本仓库现有五个任务插件：`jiasuapi`（佳速API 图片 / 视频）、`sd25_video`（sd25.app 上的 Seedance 2.5 视频，见下方「SD2.5 视频」）、`megabyai`（MegaAi 视频，见下方「MegaAi 视频」）、`guangying`（光影 AI 竖屏 Seedance 2.0，见下方「光影 AI」）和 `niney`（9Y API 的 `DB-SD-2.5`，见下方「9Y API」）。
 
 ## 佳速API（`jiasuapi`）
 
@@ -289,6 +289,62 @@ JSON 原样转发文档字段：`model`、`prompt`、`duration`、`ratio`、`res
 
 计费只申报 `seconds`。插件不写价格。成片 CDN 域名尚未从真实成功响应确认。`1.0.2` 的 `allowedHosts` 为 `guangying.store`、`www.guangying.store` 与 `api.guangying.store`。
 
+## 9Y API（`niney`）
+
+- 插件 key：`niney`
+- 当前版本：`1.0.0`
+- 显示名：9Y API（九Y）
+- 站点与文档：https://9yapi.shop （模型说明：https://9yapi.shop/docs/#model-b3224fda9acd ）
+- `allowedHosts`：`9yapi.shop`、`www.9yapi.shop`
+- 不声明 `channelTypes`。新建渠道时类型选 **任务插件**，绑定插件 `niney`
+- 插件文件不包含密钥。不要对上游做付费试提交
+
+渠道 **Base URL** 填站点根地址，例如 `https://9yapi.shop`（不要末尾斜杠，不要自带 `/v1`）。插件按 `openai_video` 拼接 `/v1/videos`。若渠道已写成 `https://9yapi.shop/v1`，插件会去掉末尾这一段 `/v1`，避免请求打到 `/v1/v1/videos`。
+
+鉴权为 `Authorization: Bearer <渠道密钥>`。
+
+白名单只有 `DB-SD-2.5`。出站 `model` 使用渠道模型映射后的上游名，必须是 `DB-SD-2.5`。`decodeRequest` 回显主机 pin 的名字。
+
+| 步骤 | 上游 |
+| --- | --- |
+| 创建 | `POST /v1/videos`（JSON，`Content-Type: application/json`） |
+| 查询 | `GET /v1/videos/{task_id}`。状态 `queued` / `in_progress` / `completed` / `failed`（`cancelled` 视为失败）。查询失败保留原任务 ID，不重新提交 |
+| 成片 | 优先查询体里的 `video_url` 或 `result_url`（同一地址，无需 Authorization，`expires_at` 为 Unix 秒）。否则 `GET` 或 `HEAD /v1/videos/{task_id}/content`（Bearer） |
+
+本插件不注册 `/niney/...`，也不注册主机的 `/v1/videos`。主机协议路径仍由 `openai_video` 提供。
+
+### 参数
+
+出站创建体只包含文档字段。`seconds` 恒为 `30`，`resolution` 恒为 `720p`。客户端另给时长时仍发 `30`，`extractUsage` / `extractUsageOnComplete` 也申报 `30`，避免按客户端秒数计费和实际上游时长不一致。显式分辨率不是 `720p` 时直接拒绝。
+
+| 调用方字段 | 上游字段 | 说明 |
+| --- | --- | --- |
+| `model` | `model` | 映射后必须是 `DB-SD-2.5` |
+| `prompt` | `prompt` | 必填、非空，最多 3000 个字符 |
+| `seconds` 或 `duration` | `seconds` | 不采用客户端数值，出站固定 `30` |
+| `resolution` 或 `video_resolution` | `resolution` | 缺省或 `720p` 都发 `720p`；其它值拒绝 |
+| `aspect_ratio` / `ratio` / `aspect` | `aspect_ratio` | `16:9`、`9:16`、`1:1`、`4:3`、`3:4`、`21:9`。缺省 `16:9` |
+| 像素 `size`（如 `1280x720`、`720x1280`、`1680x720`） | `aspect_ratio` | 只用来推导画幅，不原样转发。认不出的比例拒绝。和显式画幅冲突则拒绝 |
+| `reference_images`、`images`、`image_urls`、`image_url`、`image`、`input_reference`，以及 `{url}` | `reference_images` | 可选。归一成 HTTPS URL 字符串数组，最多 10 张。非 HTTPS 拒绝 |
+
+以上别名也可放在 `metadata` 里。空的 `reference_videos` / `reference_audios` / 首尾帧字段会被忽略；一旦带了素材就拒绝。
+
+拒绝（`plugin_request_invalid`）：
+
+- 参考视频、参考音频（`reference_videos`、`videos`、`reference_audios`、`audios` 等）
+- 首尾帧（`first_frame`、`last_frame`、`end_frame`，以及 `images[].type` 为 `first_frame` / `last_frame` / `end_frame`）
+- multipart 上传。调用方须自行提供公网 HTTPS 图片 URL，或用自己的 Key 调用 `POST /v1/reference-assets` 后，把 `reference_path` 拼到 `https://9yapi.shop` 再传入。本插件不代为上传
+
+### 下载与 `video_archive_pending`
+
+有未过期的 `video_url` / `result_url` 时，内容请求 `credentialless: true`，不转发渠道密钥。主机自己附带客户端的 `Range`。credentialless 请求不能再带插件头，否则当前主机会拒绝。
+
+没有可用地址，或 `expires_at` 已到（提前 30 秒视为过期）时，回退到 Bearer `GET|HEAD /v1/videos/{task_id}/content`。
+
+9Y 的下载示例把 HTTP 503 加 `Retry-After` 当作 `video_archive_pending`，只重试下载、不重新生成。QuantumNous new-api 的成片代理只在上游内容响应为 HTTP 429 时转发 `Retry-After`（调用方看到 503 `artifact_upstream_busy`）。上游 503 会被写成 502 `artifact_upstream_error`，且不带 `Retry-After`。插件读不到内容响应，因此不能自行等待或改写该错误，也不会因此重新提交任务。
+
+计费只申报 `seconds`（恒为 30）。插件不写价格。
+
 ## 仓库结构
 
 ```text
@@ -311,6 +367,8 @@ plugins/tasks/megabyai/1.0.0/README.md
 plugins/tasks/guangying/1.0.0/plugin.js
 plugins/tasks/guangying/1.0.0/README.md
 plugins/tasks/guangying/1.0.2/plugin.js
+plugins/tasks/niney/1.0.0/plugin.js
+plugins/tasks/niney/1.0.0/README.md
 ```
 
 ## 本地校验
@@ -324,6 +382,8 @@ node --check plugins/tasks/megabyai/1.0.0/plugin.js
 sha256sum plugins/tasks/megabyai/1.0.0/plugin.js   # 应与 index.json versions[].sha256 一致
 node --check plugins/tasks/guangying/1.0.2/plugin.js
 sha256sum plugins/tasks/guangying/1.0.2/plugin.js   # 应与 index.json versions[].sha256 一致
+node --check plugins/tasks/niney/1.0.0/plugin.js
+sha256sum plugins/tasks/niney/1.0.0/plugin.js   # 应与 index.json versions[].sha256 一致
 ```
 
 若本机有 NewAPI 源码：
