@@ -8,7 +8,7 @@
 
 - 官方地址：https://ai.jiasuapi.com/
 - 插件 key：`jiasuapi`
-- 当前版本：`1.0.2`
+- 当前版本：`1.0.3`
 - 描述：佳速API中转平台（图片、视频中转平台）。官方地址：https://ai.jiasuapi.com/
 - 市场源 `index.json`（raw）：
 
@@ -27,7 +27,7 @@ https://raw.githubusercontent.com/hyc0122/jiasuapi-newapi-plugins/main/index.jso
 
 ### 2. 安装插件
 
-1. 在市场中找到 **佳速API**（`jiasuapi@1.0.2`）
+1. 在市场中找到 **佳速API**（`jiasuapi@1.0.3`）
 2. 安装并启用
 3. 也可手动上传本仓库 `plugins/tasks/jiasuapi/1.0.2/plugin.js`
 
@@ -134,9 +134,9 @@ JIASU_API_KEY=sk-... node scripts/sync-models.mjs --version 1.0.2 \
 | `duration` 或 `seconds` | `duration` | 秒数；`seconds` 为 OpenAI Videos / Sora 兼容写法。默认由上游按模型处理（常见默认 `5`）；`2.0-*` 约 4–15，`2.5-*` 约 4–30 |
 | `ratio` 或 `aspect_ratio` | `ratio` | `16:9` / `9:16` / `1:1`；别名统一写成佳速的 `ratio` |
 | `resolution` 或 `video_resolution` | `resolution` | `480p` / `720p` / `1080p`；默认常见为 `720p` |
-| `images`、`image_urls`、`image`、`input_reference` | `images` | URL 字符串，或 `{url, name?, type?}`。`type`：`first_frame` / `end_frame`（入站也接受 `last_frame`）。无 `type` 为参考图。`input_reference` / 单张 `image` 为 Sora 兼容参考图 |
-| `videos` | `videos` | URL 或 `{url, name?}` |
-| `audios` | `audios` | URL 或 `{url, name?}`；勿与 `images[].type` 首尾帧同时使用 |
+| `images`、`image_urls`、`image`、`input_reference`、`reference_images`、`reference_image_urls` | `images` | URL 字符串，或 `{url, name?, type?}`。`type`：`first_frame` / `end_frame`（入站也接受 `last_frame`）。无 `type` 为参考图。`input_reference` / 单张 `image` 为 Sora 兼容参考图 |
+| `videos`、`video`、`video_urls`、`reference_videos`、`reference_video_urls` | `videos` | URL 或 `{url, name?}` |
+| `audios`、`audio`、`audio_urls`、`reference_audios`、`reference_audio_urls`、`reference_voice` | `audios` | URL 或 `{url, name?}`；勿与 `images[].type` 首尾帧同时使用 |
 | `materials` | `materials` | 可选 `[{type, url, name?}]` |
 | `face` | `face` | 可选。`{"enabled":true,"mode":"light"}`（或 `heavy`），或 `{"enabled":false}`；省略则走服务端默认处理 |
 
@@ -196,7 +196,7 @@ curl -sS -X POST "$YOUR_NEW_API/v1/images/create" \
 ## SD2.5 视频（`sd25_video`）
 
 - 插件 key：`sd25_video`
-- 当前版本：`1.1.2`（`1.1.0`、`1.1.1` 仍保留）
+- 当前版本：`1.1.3`（`1.1.0`、`1.1.1`、`1.1.2` 仍保留）
 - 默认 Base URL：`https://sd25.app`（渠道里已填写的 Base URL 优先；插件不内置密钥。插件 `meta` 不写 `website` / `baseUrl` / `author.url`）
 - 协议：`openai_video`（`POST /v1/videos`、`GET /v1/videos/:task_id`、`GET|HEAD /v1/videos/:task_id/content`）
 - 发给上游的 `model` 恒为 `seedance-2.5`
@@ -220,7 +220,7 @@ curl -sS -X POST "$YOUR_NEW_API/v1/images/create" \
 ## MegaAi 视频（`megabyai`）
 
 - 插件 key：`megabyai`
-- 当前版本：`1.0.0`
+- 当前版本：`1.0.1`
 - 显示名：MegaAi
 - 官方文档：https://megaviews.top/docs （https://newapi.megabyai.cc/docs 是同一份文档）
 - 站点：`https://megaviews.top`，也可使用 `https://www.megaviews.top`、`https://newapi.megaviews.top`、`https://newapi.megabyai.cc`
@@ -232,7 +232,7 @@ curl -sS -X POST "$YOUR_NEW_API/v1/images/create" \
 
 鉴权为 `Authorization: Bearer <渠道密钥>`。
 
-上游就是 MegaAi 文档里的视频任务，插件不另做一套字段改写：
+上游仍是 MegaAi 文档里的视频任务。入站先收成本站公开素材（`images` / `videos` / `audios`，含常见别名和 `materials`），再写成文档字段 `referenceImages` / `referenceVideos` / `referenceAudios`。出站只保留白名单字段，不再整包转发客户端请求：
 
 | 步骤 | 上游 |
 | --- | --- |
@@ -240,7 +240,7 @@ curl -sS -X POST "$YOUR_NEW_API/v1/images/create" \
 | 查询 | `GET /v1/videos/{task_id}` |
 | 成片 | `GET` 或 `HEAD /v1/videos/{task_id}/content` |
 
-JSON 原样转发文档字段：`model`、`prompt`、`duration`、`ratio`、`resolution`、`seed`、`referenceImages`、`referenceVideos`、`referenceAudios`、`metadata`。部分渠道使用的 `seconds`、`size`、`image`、`input_reference` 同样原样转发。`seconds` 与 `duration` 只在校验时互相认读（1–3600 秒，与官方 Sora 任务插件一致）；JSON 体不会把 `duration` 改写成 `seconds`。multipart 与官方 Sora 插件相同：表单只有 `duration` 时，会同时带上数值 `seconds`。出站 `model` 使用渠道模型映射后的名字；没有映射时与客户端模型一致。
+JSON 只发送白名单字段：`model`、`prompt`、`duration`、`seconds`、`ratio`、`aspect_ratio`、`resolution`、`video_resolution`、`seed`、`size`、`metadata`，以及由公开素材映射来的 `referenceImages`、`referenceVideos`、`referenceAudios`。`image`、`input_reference`、`images` 不再原样出现在出站体里。`seconds` 与 `duration` 只在校验时互相认读（1–3600 秒，与官方 Sora 任务插件一致）；JSON 体不会把 `duration` 改写成 `seconds`。multipart 仍只带标量白名单、`metadata` 和 `input_reference` 文件。出站 `model` 使用渠道模型映射后的名字；没有映射时与客户端模型一致。
 
 任务 ID 读取 `id` 或 `task_id`。兼容响应若把它们放在嵌套的 `data` 里，也从 `data.id` / `data.task_id` 读取。状态 `queued`、`in_progress`、`completed`、`failed`；文档里的兼容状态 `succeeded` 视为成功。认不出的状态保持未知，不会当成进行中。
 
@@ -255,7 +255,7 @@ JSON 原样转发文档字段：`model`、`prompt`、`duration`、`ratio`、`res
 ## 光影 AI（`guangying`）
 
 - 插件 key：`guangying`
-- 当前版本：`1.0.2`（`1.0.0` 仍保留）
+- 当前版本：`1.0.3`（`1.0.0`、`1.0.2` 仍保留）
 - 显示名：光影 AI
 - 站点：https://guangying.store/ （`www.guangying.store` 也可）
 - 不声明 `channelTypes`。新建渠道时类型选 **任务插件**，绑定插件 `guangying`
@@ -292,7 +292,7 @@ JSON 原样转发文档字段：`model`、`prompt`、`duration`、`ratio`、`res
 ## 9Y API（`niney`）
 
 - 插件 key：`niney`
-- 当前版本：`1.0.0`
+- 当前版本：`1.0.1`
 - 显示名：9Y API（九Y）
 - 站点与文档：https://9yapi.shop （模型说明：https://9yapi.shop/docs/#model-b3224fda9acd ）
 - `allowedHosts`：`9yapi.shop`、`www.9yapi.shop`
@@ -325,7 +325,7 @@ JSON 原样转发文档字段：`model`、`prompt`、`duration`、`ratio`、`res
 | `resolution` 或 `video_resolution` | `resolution` | 缺省或 `720p` 都发 `720p`；其它值拒绝 |
 | `aspect_ratio` / `ratio` / `aspect` | `aspect_ratio` | `16:9`、`9:16`、`1:1`、`4:3`、`3:4`、`21:9`。缺省 `16:9` |
 | 像素 `size`（如 `1280x720`、`720x1280`、`1680x720`） | `aspect_ratio` | 只用来推导画幅，不原样转发。认不出的比例拒绝。和显式画幅冲突则拒绝 |
-| `reference_images`、`images`、`image_urls`、`image_url`、`image`、`input_reference`，以及 `{url}` | `reference_images` | 可选。归一成 HTTPS URL 字符串数组，最多 10 张。非 HTTPS 拒绝 |
+| `reference_images`、`images`、`image_urls`、`image_url`、`reference_image_urls`、`image`、`input_reference`、`materials` 里的图片，以及 `{url}` | `reference_images` | 可选。归一成 HTTPS URL 字符串数组，最多 10 张。非 HTTPS 拒绝。视频、音频和首尾帧仍然拒绝 |
 
 以上别名也可放在 `metadata` 里。空的 `reference_videos` / `reference_audios` / 首尾帧字段会被忽略；一旦带了素材就拒绝。
 
@@ -356,34 +356,41 @@ scripts/last-sync.json
 plugins/tasks/jiasuapi/1.0.0/plugin.js
 plugins/tasks/jiasuapi/1.0.1/plugin.js
 plugins/tasks/jiasuapi/1.0.2/plugin.js
+plugins/tasks/jiasuapi/1.0.3/plugin.js
+plugins/tasks/_shared/collect-host-media.js
 plugins/tasks/sd25_video/1.1.0/plugin.js
 plugins/tasks/sd25_video/1.1.0/golden.json
 plugins/tasks/sd25_video/1.1.1/plugin.js
 plugins/tasks/sd25_video/1.1.1/golden.json
 plugins/tasks/sd25_video/1.1.2/plugin.js
 plugins/tasks/sd25_video/1.1.2/golden.json
+plugins/tasks/sd25_video/1.1.3/plugin.js
+plugins/tasks/sd25_video/1.1.3/golden.json
 plugins/tasks/megabyai/1.0.0/plugin.js
 plugins/tasks/megabyai/1.0.0/README.md
+plugins/tasks/megabyai/1.0.1/plugin.js
 plugins/tasks/guangying/1.0.0/plugin.js
 plugins/tasks/guangying/1.0.0/README.md
 plugins/tasks/guangying/1.0.2/plugin.js
+plugins/tasks/guangying/1.0.3/plugin.js
 plugins/tasks/niney/1.0.0/plugin.js
 plugins/tasks/niney/1.0.0/README.md
+plugins/tasks/niney/1.0.1/plugin.js
 ```
 
 ## 本地校验
 
 ```bash
-node --check plugins/tasks/jiasuapi/1.0.2/plugin.js
-sha256sum plugins/tasks/jiasuapi/1.0.2/plugin.js   # 应与 index.json versions[].sha256 一致
-node --check plugins/tasks/sd25_video/1.1.2/plugin.js
-sha256sum plugins/tasks/sd25_video/1.1.2/plugin.js   # 应与 index.json versions[].sha256 一致
-node --check plugins/tasks/megabyai/1.0.0/plugin.js
-sha256sum plugins/tasks/megabyai/1.0.0/plugin.js   # 应与 index.json versions[].sha256 一致
-node --check plugins/tasks/guangying/1.0.2/plugin.js
-sha256sum plugins/tasks/guangying/1.0.2/plugin.js   # 应与 index.json versions[].sha256 一致
-node --check plugins/tasks/niney/1.0.0/plugin.js
-sha256sum plugins/tasks/niney/1.0.0/plugin.js   # 应与 index.json versions[].sha256 一致
+node --check plugins/tasks/jiasuapi/1.0.3/plugin.js
+sha256sum plugins/tasks/jiasuapi/1.0.3/plugin.js   # 应与 index.json versions[].sha256 一致
+node --check plugins/tasks/sd25_video/1.1.3/plugin.js
+sha256sum plugins/tasks/sd25_video/1.1.3/plugin.js   # 应与 index.json versions[].sha256 一致
+node --check plugins/tasks/megabyai/1.0.1/plugin.js
+sha256sum plugins/tasks/megabyai/1.0.1/plugin.js   # 应与 index.json versions[].sha256 一致
+node --check plugins/tasks/guangying/1.0.3/plugin.js
+sha256sum plugins/tasks/guangying/1.0.3/plugin.js   # 应与 index.json versions[].sha256 一致
+node --check plugins/tasks/niney/1.0.1/plugin.js
+sha256sum plugins/tasks/niney/1.0.1/plugin.js   # 应与 index.json versions[].sha256 一致
 ```
 
 若本机有 NewAPI 源码：
