@@ -220,7 +220,7 @@ curl -sS -X POST "$YOUR_NEW_API/v1/images/create" \
 ## MegaAi 视频（`megabyai`）
 
 - 插件 key：`megabyai`
-- 当前版本：`1.0.1`
+- 当前版本：`1.0.3`（`1.0.0`、`1.0.1`、`1.0.2` 仍保留）
 - 显示名：MegaAi
 - 官方文档：https://megaviews.top/docs （https://newapi.megabyai.cc/docs 是同一份文档）
 - 站点：`https://megaviews.top`，也可使用 `https://www.megaviews.top`、`https://newapi.megaviews.top`、`https://newapi.megabyai.cc`
@@ -232,7 +232,7 @@ curl -sS -X POST "$YOUR_NEW_API/v1/images/create" \
 
 鉴权为 `Authorization: Bearer <渠道密钥>`。
 
-上游仍是 MegaAi 文档里的视频任务。入站先收成本站公开素材（`images` / `videos` / `audios`，含常见别名和 `materials`），再写成文档字段 `referenceImages` / `referenceVideos` / `referenceAudios`。出站只保留白名单字段，不再整包转发客户端请求：
+上游仍是 MegaAi 文档里的视频任务。入站先收成本站公开素材（`images` / `videos` / `audios`，含常见别名和 `materials`），再写成文档字段 `referenceImages` / `referenceVideos` / `referenceAudios`。官方类型是 `string[]`（公开 HTTP(S) URL）。`1.0.3` 起字符串原样保留，`{name, url}` / `{url}` 只取 `url`，不转发 `name`、`type` 或对象本身；没有 URL 的项跳过，结果为空则省略该字段。出站只保留白名单字段，不再整包转发客户端请求：
 
 | 步骤 | 上游 |
 | --- | --- |
@@ -246,9 +246,9 @@ JSON 只发送白名单字段：`model`、`prompt`、`duration`、`seconds`、`r
 
 计费用量只申报 `seconds`（单位秒），取请求或完成结果中的 `duration` / `seconds`。插件不写价格或倍率。
 
-可 pin 的视频模型（`meta.models` 与 `protocols.openai_video.models`，共 22 个；不含对话 / 图片模型）：
+可 pin 的视频模型（`meta.models` 与 `protocols.openai_video.models`，共 45 个；不含对话 / 图片模型）。`1.0.2` 在原先 22 个之后追加了线上已使用的 23 个 id，`1.0.3` 原样保留：
 
-`S-seedance-2.5-480p`、`T1-seedance-2.5`、`T2-seedance-2.5`、`T3-seedance-2.5`、`bb-2.5-301010`、`minimax-h3-f`、`minimax_h3_zm_u24`、`sd-2.0`、`sd-2.5-720p`、`sd-fast`、`sd-mini`、`sd2.5-pro`、`sd2.5max900`、`seedance-2.0-fast-m1`、`seedance-2.0-m1`、`seedance-2.0-mini-m1`、`seedance-2.5-m1`、`seedance-2.5-m3`、`video-sd20-10s`、`wan-3.0`、`wan3.0-video`、`wan3.0-video-prime`
+`S-seedance-2.5-480p`、`T1-seedance-2.5`、`T2-seedance-2.5`、`T3-seedance-2.5`、`bb-2.5-301010`、`minimax-h3-f`、`minimax_h3_zm_u24`、`sd-2.0`、`sd-2.5-720p`、`sd-fast`、`sd-mini`、`sd2.5-pro`、`sd2.5max900`、`seedance-2.0-fast-m1`、`seedance-2.0-m1`、`seedance-2.0-mini-m1`、`seedance-2.5-m1`、`seedance-2.5-m3`、`video-sd20-10s`、`wan-3.0`、`wan3.0-video`、`wan3.0-video-prime`、`seedance-2.0-fast-m2`、`seedance-2.0-fast-m2-480p`、`seedance-2.0-fast-m2-720p`、`seedance-2.0-m2`、`seedance-2.0-m2-480p`、`seedance-2.0-m2-720p`、`seedance-2.0-m2-1080p`、`seedance-2.0-m2-4k`、`seedance-2.0-mini-m2`、`seedance-2.0-mini-m2-480p`、`seedance-2.0-mini-m2-720p`、`seedance-2.5-480p-m2`、`seedance-2.5-480p-m2-480p`、`seedance-2.5-flf-m2`、`seedance-2.5-flf-m2-480p`、`seedance-2.5-flf-m2-720p`、`seedance-2.5-flf-m2-1080p`、`seedance-2.5-m2`、`seedance-2.5-m2-480p`、`seedance-2.5-m2-720p`、`seedance-2.5-m2-1080p`、`T1-seedance-2.5-480p`、`T1-seedance-2.5-720p`
 
 本插件不注册 `/megabyai/...` 或公开的 `/v1/videos`。主机协议路径仍由 `openai_video` 提供。
 
@@ -369,6 +369,9 @@ plugins/tasks/sd25_video/1.1.3/golden.json
 plugins/tasks/megabyai/1.0.0/plugin.js
 plugins/tasks/megabyai/1.0.0/README.md
 plugins/tasks/megabyai/1.0.1/plugin.js
+plugins/tasks/megabyai/1.0.2/plugin.js
+plugins/tasks/megabyai/1.0.3/plugin.js
+plugins/tasks/megabyai/1.0.3/reference-urls.test.mjs
 plugins/tasks/guangying/1.0.0/plugin.js
 plugins/tasks/guangying/1.0.0/README.md
 plugins/tasks/guangying/1.0.2/plugin.js
@@ -385,8 +388,10 @@ node --check plugins/tasks/jiasuapi/1.0.3/plugin.js
 sha256sum plugins/tasks/jiasuapi/1.0.3/plugin.js   # 应与 index.json versions[].sha256 一致
 node --check plugins/tasks/sd25_video/1.1.3/plugin.js
 sha256sum plugins/tasks/sd25_video/1.1.3/plugin.js   # 应与 index.json versions[].sha256 一致
-node --check plugins/tasks/megabyai/1.0.1/plugin.js
-sha256sum plugins/tasks/megabyai/1.0.1/plugin.js   # 应与 index.json versions[].sha256 一致
+node --check plugins/tasks/megabyai/1.0.3/plugin.js
+node plugins/tasks/megabyai/1.0.3/reference-urls.test.mjs
+sha256sum plugins/tasks/megabyai/1.0.2/plugin.js   # 应与 index.json versions[].sha256 一致
+sha256sum plugins/tasks/megabyai/1.0.3/plugin.js   # 应与 index.json versions[].sha256 一致
 node --check plugins/tasks/guangying/1.0.3/plugin.js
 sha256sum plugins/tasks/guangying/1.0.3/plugin.js   # 应与 index.json versions[].sha256 一致
 node --check plugins/tasks/niney/1.0.1/plugin.js
